@@ -75,4 +75,7 @@ So that **I can see the original content**.
 
 ---
 
-Thanks for your time, we look forward to hearing from you!
+#Notes
+This app needs more work to cover edge cases, and we can discuss this in person.
+
+To run the app ```contentconsole -h```

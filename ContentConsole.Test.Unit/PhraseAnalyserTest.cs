@@ -1,49 +1,97 @@
-﻿using Moq;
+﻿using System;
 using NUnit.Framework;
 
 namespace ContentConsole.Test.Unit
 {
-    /// <summary>
-    /// As a user 
-    /// I want see the number of negative words in a text input 
-    /// So that we can track the amount of negative content
-    /// </summary>
     [TestFixture]
     public class PhraseAnalyserTest
     {
-        private const string testPhrase =
+        private const string TestPhrase =
             "The weather in Manchester in winter is bad. It rains all the time - it must be horrible for people visiting.";
-
-        private IConsoleWriter _consoleWriter;
-        private Mock<IConsoleWriter> _mockConsoleWriter;
+        private const string OfuscatedTestPhrase =
+            "The weather in Manchester in winter is b#d. It rains all the time - it must be h######e for people visiting.";
+        private PhraseAnalyser _phraseAnalyser;
+        private DataStore _dataStore;
 
         [SetUp]
         public void SetUp()
         {
-            _mockConsoleWriter = new Mock<IConsoleWriter>();
-            _consoleWriter = _mockConsoleWriter.Object;
+            _dataStore = new DataStore();
+            _dataStore.SetNegativeWords(new[] {"swine", "bad", "nasty", "horrible"});
+            _phraseAnalyser = new PhraseAnalyser(_dataStore);
         }
 
         [Test]
         public void Should_output_total_negative_words()
         {
             // arrange
-            var phraseAnalyser = new PhraseAnalyser(_consoleWriter);
+            var expected = "Total Number of negative words: " + "2" + Environment.NewLine;
 
             // act
-            phraseAnalyser.Analyse(testPhrase);
+            var results = _phraseAnalyser.Analyse(TestPhrase);
 
             // assert
-            _mockConsoleWriter.Verify(m => m.WriteLine(It.IsAny<string>()));
-
+            Assert.IsTrue(results.Contains(expected));
         }
 
-        //[Test]
-        //public void Should_output_the_phrase_analysed()
-        //{
+        [Test]
+        public void Should_output_the_NonObfuscated_phrase_analysed()
+        {
+            // arrange
 
-        //}
+            // act
+            var results = _phraseAnalyser.Analyse(TestPhrase);
 
-        
+            // assert
+            Assert.IsTrue(results.Contains(TestPhrase));
+        }
+
+        [Test]
+        public void Should_output_the_Obfuscated_phrase_analysed()
+        {
+            // arrange
+            _dataStore.SetWordObfuscation(true);
+
+            // act
+            var results = _phraseAnalyser.Analyse(TestPhrase);
+
+            // assert
+            Assert.IsTrue(results.Contains(OfuscatedTestPhrase));
+        }
+
+        [Test]
+        public void Should_Output_NonObfuscated_As_Expected()
+        {
+            // arrange
+
+            // act
+            var results = _phraseAnalyser.Analyse(TestPhrase);
+
+            // assert
+            Assert.AreEqual(ExpectedOutput(TestPhrase), results);
+        }
+
+
+        [Test]
+        public void Should_Output_Obfuscated_As_Expected()
+        {
+            // arrange
+            _dataStore.SetWordObfuscation(true);
+
+            // act
+            var results = _phraseAnalyser.Analyse(TestPhrase);
+
+            // assert
+            Assert.AreEqual(ExpectedOutput(OfuscatedTestPhrase), results);
+        }
+
+        private static string ExpectedOutput(string phrase)
+        {
+            var expected = "Scanned the text:" + Environment.NewLine
+                           + phrase + Environment.NewLine
+                           + "Total Number of negative words: " + "2" + Environment.NewLine
+                           + "Press ANY key to exit.";
+            return expected;
+        }
     }
 }

@@ -1,13 +1,20 @@
-﻿namespace ContentConsole
+﻿using System;
+
+namespace ContentConsole
 {
     public static class Program
     {
         public static void Main(string[] args)
         {
-            var consoleWriter = new ConsoleWriter();
-            var phraseAnalyser = new PhraseAnalyser(consoleWriter);
-            phraseAnalyser.Analyse("The weather in Manchester in winter is bad. It rains all the time - it must be horrible for people visiting.");
-            
+            var dataStore = new DataStore();
+            // prime with default negative words and obfucation
+            dataStore.SetNegativeWords(new[] { "swine", "bad", "nasty", "horrible" });
+            dataStore.SetWordObfuscation(true);
+            var phraseAnalyzer = new PhraseAnalyser(dataStore);
+            var contentApp = new ContentApp(dataStore, phraseAnalyzer);
+
+            Console.Write(contentApp.Run(args));
+            Console.ReadLine();
         }
     }
 

@@ -1,46 +1,54 @@
-﻿namespace ContentConsole
-{
-    public class PhraseAnalyser
-    {
-        private readonly IConsoleWriter _consoleWriter;
+﻿using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
-        public PhraseAnalyser(IConsoleWriter consoleWriter)
+namespace ContentConsole
+{
+    public class PhraseAnalyser : IPhraseAnalyser
+    {
+        private readonly IDataStore _dataStore;
+
+        public PhraseAnalyser(IDataStore dataStore)
         {
-            _consoleWriter = consoleWriter;
+            _dataStore = dataStore;
         }
 
-        public void Analyse(string content)
+        public string Analyse(string content)
         {
-            string bannedWord1 = "swine";
-            string bannedWord2 = "bad";
-            string bannedWord3 = "nasty";
-            string bannedWord4 = "horrible";
+            var bannedWords = _dataStore.GetNegativeWords();
+            var obfuscate = _dataStore.GetWordObfuscation();
 
-            
-            int badWords = 0;
-            if (content.Contains(bannedWord1))
+            var badWords = 0;
+
+            foreach (var bw in bannedWords)
             {
-                badWords = badWords + 1;
-            }
-            if (content.Contains(bannedWord2))
-            {
-                badWords = badWords + 1;
-            }
-            if (content.Contains(bannedWord3))
-            {
-                badWords = badWords + 1;
-            }
-            if (content.Contains(bannedWord4))
-            {
-                badWords = badWords + 1;
+                var r = Replacement(bw);
+                var rgx = new Regex(bw);
+                badWords += rgx.Matches(content).Count;
+                if (obfuscate)
+                {
+                    content = rgx.Replace(content, r);
+                }
             }
 
-            _consoleWriter.WriteLine("Scanned the text:");
-            _consoleWriter.WriteLine(content);
-            _consoleWriter.WriteLine("Total Number of negative words: " + badWords);
+            return "Scanned the text:" + Environment.NewLine
+                         + content + Environment.NewLine
+                         + "Total Number of negative words: " + badWords + Environment.NewLine
+                         + "Press ANY key to exit.";
+        }
 
-            _consoleWriter.WriteLine("Press ANY key to exit.");
-            _consoleWriter.ReadKey();
+        private static string Replacement(string word)
+        {
+            if (String.IsNullOrEmpty(word) || word.Length < 3) return word;
+            var l = word.Length - 2;
+            var replacement = word[0].ToString(CultureInfo.InvariantCulture);
+            for (var i = 0; i < l; i++)
+            {
+                replacement += "#";
+            }
+            replacement += word[word.Length - 1];
+            return replacement;
+
         }
     }
 }
